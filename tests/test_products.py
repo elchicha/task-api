@@ -145,3 +145,43 @@ def test_valid_product_retrieval_returns_200(client):
     assert "name" in response.json()
     assert "price" in response.json()
     assert "description" in response.json()
+
+
+def test_update_products_return_200(client):
+    """
+    Test: PUT /products/{sku} updates an existing product and returns 200 OK
+    :param client:
+    :return:
+    """
+    create_data = {
+        "sku": "WIDGET-001",
+    }
+
+
+def test_update_product_returns_200(client):
+    """
+    Test: PUT /products/{sku} updates existing product and returns 200 OK
+    :param client:
+    :return:
+    """
+    create_data = {
+        "sku": "WIDGET-001",
+        "name": "Blue Widget",
+        "price": 29.99,
+        "description": "Original description",
+    }
+    client.post("/products", json=create_data)
+
+    update_data = {
+        "sku": "WIDGET-001",
+        "name": "Updated Blue Widget",
+        "price": 29.99,
+        "description": "Updated description",
+    }
+
+    response = client.put("/products/WIDGET-001", json=update_data)
+    assert response.status_code == 200
+    assert response.json()["sku"] == "WIDGET-001"
+    assert response.json()["name"] == "Updated Blue Widget"
+    assert response.json()["price"] == 29.99
+    assert response.json()["description"] == "Updated description"
