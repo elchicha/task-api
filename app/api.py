@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import FastAPI, status, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 app = FastAPI(
     title="EchetoTech Product Catalog API",
@@ -18,7 +18,7 @@ class Product(BaseModel):
 
     sku: str
     name: str
-    price: float
+    price: float = Field(gt=0, description="Price must be greater than 0")
     description: str
 
 
