@@ -50,7 +50,7 @@ def create_product(product: Product):
     :param product:
     :return:
     """
-    global next_id
+    global next_id, products_db
 
     if product.sku in products_db:
         raise HTTPException(
@@ -65,3 +65,15 @@ def create_product(product: Product):
     next_id += 1
 
     return new_product
+
+
+@app.get(
+    "/products/{sku}", response_model=ProductResponse, status_code=status.HTTP_200_OK
+)
+def get_product(sku: str):
+    if sku not in products_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
+    return products_db[sku]
