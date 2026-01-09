@@ -1,11 +1,12 @@
 import pytest
 from fastapi.testclient import TestClient
-from app.api import app
+from app.api import app, reset_database
 
 
 @pytest.fixture
 def client():
     """Test client for our Product API"""
+    reset_database()
     return TestClient(app)
 
 

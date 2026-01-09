@@ -13,6 +13,13 @@ products_db = {}
 next_id = 1
 
 
+def reset_database():
+    """Reset the in-memory database. Used for testing"""
+    global next_id, products_db
+    products_db.clear()
+    next_id = 1
+
+
 class Product(BaseModel):
     """Model for creating a product"""
 
@@ -44,7 +51,8 @@ def create_product(product: Product):
     :return:
     """
     global next_id
-
+    print(f"DEBUG - products_db before check: {products_db}")  # 👈 Add this
+    print(f"DEBUG - Checking for SKU: {product.sku}")  # 👈 Add this
     if product.sku in products_db:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
