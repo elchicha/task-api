@@ -70,3 +70,34 @@ def test_create_duplicate_sku_returns_409(client):
     error_data = response2.json()
     assert "detail" in error_data  # FastAPI's standard error format
     assert "WIDGET-001" in str(error_data["detail"])  # Tell them which SKU conflicted
+
+
+def test_create_product_with_negative_price_returns_422(client):
+    """
+    Test 3: Creating a product with a negative price should return 422 Unprocessable Entity
+
+    This is validation - the data format is correct (float), but the VALUE is invalid.
+
+    Real support scenario: Customer's CSV import has a data error.
+    As a support manager, your team needs to explain:
+    - 422 means "we understood your request, but the data is invalid"
+    - Different from 400 (malformed request) or 409 (conflict)
+    - The error should tell them which field is invalid and why
+    """
+    product_data = {
+        "sku": "WIDGET-002",
+        "name": "Cheap Widget",
+        "price": -10.00,
+        "description": "This shouldn't work",
+    }
+
+    response = client.post("/products", json=product_data)
+
+    # Should get 422 Unprocessable Entity
+    assert response.status_code == 422
+
+    # Error should mention price
+    error_data = response.json()
+    assert "detail" in error_data
+    # FastAPI validation errors have a specific structure
+    assert any("price" in str(error).lower() for error in error_data["detail"])
