@@ -117,3 +117,31 @@ def test_invalid_product_retrieval_returns_404(client):
     response = client.get("/products/WIDGET-003")
     assert response.status_code == 404
     assert response.json()["detail"] == "Not Found"
+
+
+def test_valid_product_retrieval_returns_200(client):
+    """
+    Test 5: Retrieving a valid product should return 200 OK
+
+    Real support scenario: Customer's product lookup succeeds.
+    As a support manager, your team needs to explain:
+    - 200 means "the request was successful"
+    - The response should include the product details
+    - The error should tell them which field is invalid and why
+    """
+    product_data = {
+        "id": 1,
+        "sku": "WIDGET-001",
+        "name": "Widget 1",
+        "price": 10.0,
+        "description": "A great widget",
+    }
+    client.post("/products", json=product_data)
+
+    response = client.get("/products/WIDGET-001")
+    assert response.status_code == 200
+    assert "id" in response.json()
+    assert "sku" in response.json()
+    assert "name" in response.json()
+    assert "price" in response.json()
+    assert "description" in response.json()
