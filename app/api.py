@@ -51,8 +51,7 @@ def create_product(product: Product):
     :return:
     """
     global next_id
-    print(f"DEBUG - products_db before check: {products_db}")  # 👈 Add this
-    print(f"DEBUG - Checking for SKU: {product.sku}")  # 👈 Add this
+
     if product.sku in products_db:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
