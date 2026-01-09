@@ -102,3 +102,18 @@ def test_create_product_with_negative_price_returns_422(client):
     assert "detail" in error_data
     # FastAPI validation errors have a specific structure
     assert any("price" in str(error).lower() for error in error_data["detail"])
+
+
+def test_invalid_product_retrieval_returns_404(client):
+    """
+    Test 4: Retrieving a product with an invalid SKU should return 404 Not Found
+
+    Real support scenario: Customer's product lookup fails.
+    As a support manager, your team needs to explain:
+    - 404 means "the resource you requested does not exist"
+    - Different from 400 (malformed request) or 409 (conflict)
+    - The error should tell them which field is invalid and why
+    """
+    response = client.get("/products/WIDGET-003")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Not Found"
