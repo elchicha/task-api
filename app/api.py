@@ -74,6 +74,35 @@ def get_product(sku: str):
     if sku not in products_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found",
+            detail=f"Product with SKU '{sku}' not found",
         )
     return products_db[sku]
+
+
+@app.put(
+    "/products/{sku}", response_model=ProductResponse, status_code=status.HTTP_200_OK
+)
+def update_product(sku: str, product: Product):
+    """
+    Update an existing product.
+    Returns 404 if product doesn't exist.
+
+    :param product:
+    :param sku:
+    :return:
+    """
+
+    if sku not in products_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Product with SKU '{sku}' not found",
+        )
+
+    existing_id = products_db[sku]["id"]
+
+    updated_product = product.model_dump()
+    updated_product["id"] = existing_id
+
+    products_db[sku] = updated_product
+
+    return updated_product
