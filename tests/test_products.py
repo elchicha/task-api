@@ -185,3 +185,25 @@ def test_update_product_returns_200(client):
     assert response.json()["name"] == "Updated Blue Widget"
     assert response.json()["price"] == 29.99
     assert response.json()["description"] == "Updated description"
+
+
+def test_update_nonexistent_product_returns_404(client):
+    """
+    Test: PUT on non-existent product returns 404
+
+    We're doing update-only PUT (not upsert).
+    If you want to create, use POST.
+    """
+    update_data = {
+        "sku": "DOES-NOT-EXIST",
+        "name": "Ghost Product",
+        "price": 99.99,
+        "description": "This product was never created",
+    }
+
+    response = client.put("/products/DOES-NOT-EXIST", json=update_data)
+
+    assert response.status_code == 404
+    error_data = response.json()
+    assert "detail" in error_data
+    assert "not found" in error_data["detail"].lower()
