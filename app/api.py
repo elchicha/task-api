@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, HTTPException
 from pydantic import BaseModel
 
 app = FastAPI(
@@ -45,8 +45,16 @@ def create_product(product: Product):
     """
     global next_id
 
+    if product.sku in products_db:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Product with SKU '{product.sku}' already exists",
+        )
+
     new_product = product.model_dump()
     new_product["id"] = next_id
+
+    products_db[product.sku] = new_product
     next_id += 1
 
     return new_product
