@@ -243,3 +243,34 @@ class TestDeleteProduct:
         error_data = response.json()
         assert "detail" in error_data
         assert "not found" in error_data["detail"].lower()
+
+
+class TestRateLimiting:
+    """Tests for rate limiting"""
+
+    def test_too_many_requests_return_429(self, client):
+        """
+        Test: Making too many requests in short time returns 429
+
+        Support Scenario: Customer's script has no delay between requests.
+        They're hammering the API. We need to tell them to slow down.
+
+        :param client:
+        :return:
+        """
+
+        # Make multiple requests rapidly
+        # Let's say limit is 5 requests per second
+        # Make 6 requests - the 6th should fail
+
+        for i in range(5):
+            response = client.get(f"/products/TEST-{i}")
+            assert response.status_code in [200, 404]  # Normal responses
+
+        # 6th response should be rate limited
+        response = client.get("/products/TEST-6")
+        assert response.status_code == 429
+
+        error_data = response.json()
+        assert "detail" in error_data
+        assert "rate limit" in error_data["detail"].lower()
