@@ -274,3 +274,65 @@ class TestRateLimiting:
         error_data = response.json()
         assert "detail" in error_data
         assert "rate limit" in error_data["detail"].lower()
+
+    def test_rate_limit_resets_after_time(self, client):
+        """
+        Test: Rate limit should reset after time window
+
+        If we wait, we should be able to make 5 more requests
+        """
+        import time
+
+        # Make 5 requests (use up the limit)
+        for i in range(5):
+            client.get(f"/products/TEST-{i}")
+
+        # 6th should fail
+        response = client.get("/products/TEST-FAIL")
+        assert response.status_code == 429
+
+        # Wait 2 seconds (simulate time passing)
+        time.sleep(2)
+
+        # Should be able to make requests again!
+        response = client.get("/products/TEST-SHOULD-WORK")
+        # This will FAIL with your current implementation
+        assert response.status_code in [200, 404]  # Not 429!
+
+
+class TestServerErrors:
+    """Tests for 5xx server errors (our fault, not client's)"""
+
+    def test_corrupted_data_returns_500(self, client):
+        """
+        Test: If our data is corrupted, return 500 (not 404 or other 4xx)
+
+        Support scenario: Customer reports they can GET a product,
+        but the response is broken. This is OUR bug, not theirs.
+
+        5xx means: "We messed up, escalate to engineering"
+
+        :param client:
+        :return:
+        """
+        # Simulate bad data
+        from app.api import products_db
+
+        products_db["CORRUPT-PRODUCT"] = {
+            "id": 999,
+            "sku": "CORRUPT-PRODUCT",
+            "name": "Corrupted",
+            "price": "NOT_A_NUMBER",
+            "description": "Bad data",
+        }
+
+        response = client.get("/products/CORRUPT-PRODUCT")
+
+        assert response.status_code == 500
+
+        error_data = response.json()
+        assert "detail" in error_data
+        assert (
+            "internal" in error_data["detail"].lower()
+            or "error" in error_data["detail"].lower()
+        )
