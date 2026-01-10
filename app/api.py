@@ -10,8 +10,8 @@ app = FastAPI(
 # In-memory storage TODO: Improve storage implementation
 products_db = {}
 next_id = 1
-
 request_timestamps = []
+MAINTENANCE_MODE = False
 
 
 def reset_database():
@@ -48,6 +48,11 @@ def rate_limit_check():
     if len(request_timestamps) >= 5:
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
     request_timestamps.append(now)
+
+
+def is_maintenance_mode():
+    global MAINTENANCE_MODE
+    return MAINTENANCE_MODE
 
 
 class Product(BaseModel):
@@ -104,6 +109,11 @@ def create_product(product: Product):
     dependencies=[Depends(rate_limit_check)],
 )
 def get_product(sku: str):
+    if is_maintenance_mode():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service temporarily unavailable. Please try again later.",
+        )
     try:
         db = get_database_connection()
 
