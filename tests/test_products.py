@@ -211,3 +211,35 @@ class TestUpdateProduct:
         error_data = response.json()
         assert "detail" in error_data
         assert "not found" in error_data["detail"].lower()
+
+
+class TestDeleteProduct:
+    """Tests for DELETE /products/{sku}"""
+
+    def test_delete_product_returns_204(self, client):
+        """DELETE should delete product and return 204 No Content"""
+        # Create a product first
+        product_data = {
+            "sku": "WIDGET-DELETE",
+            "name": "To Be Deleted",
+            "price": 29.99,
+            "description": "This will be deleted",
+        }
+        client.post("/products", json=product_data)
+
+        # Delete it
+        response = client.delete("/products/WIDGET-DELETE")
+        assert response.status_code == 204
+
+        # Verify it's gone - GET should return 404
+        get_response = client.get("/products/WIDGET-DELETE")
+        assert get_response.status_code == 404
+
+    def test_delete_nonexistent_product_returns_404(self, client):
+        """DELETE on non-existent product returns 404"""
+        response = client.delete("/products/DOES-NOT-EXIST")
+
+        assert response.status_code == 404
+        error_data = response.json()
+        assert "detail" in error_data
+        assert "not found" in error_data["detail"].lower()
