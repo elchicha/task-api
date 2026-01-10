@@ -303,36 +303,26 @@ class TestRateLimiting:
 class TestServerErrors:
     """Tests for 5xx server errors (our fault, not client's)"""
 
-    def test_corrupted_data_returns_500(self, client):
+    def test_database_connection_failure_returns_500(self, client):
         """
-        Test: If our data is corrupted, return 500 (not 404 or other 4xx)
+        Test: If database connection fails, return 500
 
-        Support scenario: Customer reports they can GET a product,
-        but the response is broken. This is OUR bug, not theirs.
-
-        5xx means: "We messed up, escalate to engineering"
-
-        :param client:
-        :return:
+        Support scenario: Database is down, connection pool exhausted,
+        or network issue. Customer can't do anything - this is our problem.
         """
-        # Simulate bad data
-        from app.api import products_db
+        from unittest.mock import patch
 
-        products_db["CORRUPT-PRODUCT"] = {
-            "id": 999,
-            "sku": "CORRUPT-PRODUCT",
-            "name": "Corrupted",
-            "price": "NOT_A_NUMBER",
-            "description": "Bad data",
-        }
+        # Mock the database connection to raise an exception
+        with patch("app.api.get_database_connection") as mock_db:
+            mock_db.side_effect = Exception("Database connection failed")
 
-        response = client.get("/products/CORRUPT-PRODUCT")
+            # Try to get a product
+            response = client.get("/products/ANY-SKU")
 
-        assert response.status_code == 500
-
-        error_data = response.json()
-        assert "detail" in error_data
-        assert (
-            "internal" in error_data["detail"].lower()
-            or "error" in error_data["detail"].lower()
-        )
+            assert response.status_code == 500
+            error_data = response.json()
+            assert "detail" in error_data
+            assert (
+                "internal" in error_data["detail"].lower()
+                or "error" in error_data["detail"].lower()
+            )
