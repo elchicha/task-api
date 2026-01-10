@@ -19,6 +19,7 @@ def reset_database():
     global next_id, products_db
     products_db.clear()
     next_id = 1
+    request_timestamps.clear()
 
 
 def get_database_connection():
