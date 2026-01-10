@@ -1,5 +1,6 @@
-from fastapi import FastAPI, status, HTTPException
+from fastapi import FastAPI, status, HTTPException, Depends
 from pydantic import BaseModel, Field
+from datetime import datetime, timedelta
 
 app = FastAPI(
     title="EchetoTech Product Catalog API",
@@ -10,12 +11,28 @@ app = FastAPI(
 products_db = {}
 next_id = 1
 
+request_timestamps = []
+
 
 def reset_database():
     """Reset the in-memory database. Used for testing"""
     global next_id, products_db
     products_db.clear()
     next_id = 1
+
+
+def rate_limit_check():
+    # Check if rate limit is exceeded
+    global request_timestamps
+    now = datetime.now()
+
+    request_timestamps = [
+        ts for ts in request_timestamps if now - ts < timedelta(seconds=1)
+    ]
+
+    if len(request_timestamps) >= 5:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+    request_timestamps.append(now)
 
 
 class Product(BaseModel):
@@ -66,7 +83,10 @@ def create_product(product: Product):
 
 
 @app.get(
-    "/products/{sku}", response_model=ProductResponse, status_code=status.HTTP_200_OK
+    "/products/{sku}",
+    response_model=ProductResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(rate_limit_check)],
 )
 def get_product(sku: str):
     if sku not in products_db:
