@@ -106,3 +106,13 @@ def update_product(sku: str, product: Product):
     products_db[sku] = updated_product
 
     return updated_product
+
+
+@app.delete("/products/{sku}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_product(sku: str):
+    if sku not in products_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Product with SKU '{sku}' not found",
+        )
+    del products_db[sku]
