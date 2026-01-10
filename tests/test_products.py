@@ -326,3 +326,26 @@ class TestServerErrors:
                 "internal" in error_data["detail"].lower()
                 or "error" in error_data["detail"].lower()
             )
+
+    def test_service_maintenance_return_503(self, client):
+        """
+        Test: During maintenance mode, return 503 Service Unavailable
+
+        Support Scenario: We're doing database
+        :param client:
+        :return:
+        """
+        from unittest.mock import patch
+
+        with patch("app.api.is_maintenance_mode") as mock_maintenance:
+            mock_maintenance.return_value = True
+
+            response = client.get("/products/ANY-SKU")
+
+            assert response.status_code == 503
+            error_data = response.json()
+            assert "detail" in error_data
+            assert (
+                "unavailable" in error_data["detail"].lower()
+                or "maintenance" in error_data["detail"].lower()
+            )
