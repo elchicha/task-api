@@ -21,6 +21,20 @@ def reset_database():
     next_id = 1
 
 
+def get_database_connection():
+    """
+    Simulate getting a database connection.
+    In real app, this would connect to PostgreSQL, MongoDB, etc.
+
+    For testing, we can make this fail on demand.
+    """
+    # In production, this might be:
+    # return psycopg2.connect(DATABASE_URL)
+
+    # For our in-memory version, just return the dict
+    return products_db
+
+
 def rate_limit_check():
     # Check if rate limit is exceeded
     global request_timestamps
@@ -89,12 +103,21 @@ def create_product(product: Product):
     dependencies=[Depends(rate_limit_check)],
 )
 def get_product(sku: str):
-    if sku not in products_db:
+    try:
+        db = get_database_connection()
+
+        if sku not in db:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Product with SKU '{sku}' not found",
+            )
+        return db[sku]
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Product with SKU '{sku}' not found",
+            status_code=500, detail="Internal server error: Unable to process request"
         )
-    return products_db[sku]
 
 
 @app.put(
